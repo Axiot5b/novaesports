@@ -1,8 +1,8 @@
 name = "nova-esports"
-main = "dist/_worker.js"
 compatibility_date = "2024-04-19"
 compatibility_flags = ["nodejs_compat"]
 
+# Configuración de D1
 [[d1_databases]]
 binding = "DB"
 database_name = "lol_teams_db"
@@ -21,5 +21,13 @@ build_output_directory = "dist"
 include = ["/*"]
 exclude = []
 
+# Configuración específica para Cloudflare Pages
+[env.preview]
+d1_databases = [
+  { binding = "DB", database_name = "lol_teams_db", database_id = "f0c6cda1-883d-4bca-9e20-3f4571e77c36" }
+]
+
 [env.production]
-d1_databases = [{ binding = "DB", database_name = "lol_teams_db", database_id = "f0c6cda1-883d-4bca-9e20-3f4571e77c36" }]
+d1_databases = [
+  { binding = "DB", database_name = "lol_teams_db", database_id = "f0c6cda1-883d-4bca-9e20-3f4571e77c36" }
+]
