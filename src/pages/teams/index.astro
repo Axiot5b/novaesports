@@ -1,0 +1,68 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PlayerCard from '../../components/players/PlayerCard.astro';
+import { getTeamById, getPlayersByTeamId } from '../../lib/db';
+import type { Team, Player } from '../../types';
+
+// IDs de los equipos en el orden deseado
+const teamIds = ['vanguards', 'sector', 'quantum'];
+const teamNames = {
+  vanguards: 'Nova Vanguards',
+  sector: 'Sector Nova',
+  quantum: 'Nova Quantum'
+};
+
+// Obtener los equipos y sus jugadores
+const teams = await Promise.all(
+  teamIds.map(async (id) => {
+    const team = await getTeamById(id);
+    if (!team) return null;
+    
+    // Obtener jugadores y ordenarlos por rol
+    const players = await getPlayersByTeamId(id);
+    const roleOrder = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'];
+    const sortedPlayers = players.sort((a, b) => 
+      roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role)
+    );
+
+    return {
+      ...team,
+      players: sortedPlayers
+    };
+  })
+).then(teams => teams.filter((team): team is Team & { players: Player[] } => team !== null));
+---
+
+<Layout title="Equipos - LoL Teams Manager">
+  <div class="mb-8">
+    <h1 class="text-4xl font-bold mb-2">Equipos Nova</h1>
+    <p class="text-gray-400">Gestión de equipos competitivos</p>
+  </div>
+
+  <div class="space-y-12">
+    {teams.map(team => (
+      <div class="bg-gray-800 rounded-lg p-6">
+        <div class="mb-6">
+          <h2 class="text-3xl font-bold mb-2">{team.name}</h2>
+          <div class="flex gap-4 text-gray-400">
+            <p>Win Rate: <span class="text-green-400">{team.winRate}%</span></p>
+            <p>Partidas: <span class="text-blue-400">{team.totalGames}</span></p>
+            <p>Récord reciente: <span class="text-green-400">{team.recentMatches.wins}W</span> - <span class="text-red-400">{team.recentMatches.losses}L</span></p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          {team.players.map(player => (
+            <PlayerCard player={player} />
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {teams.length === 0 && (
+    <div class="text-center py-12">
+      <p class="text-gray-400">No se encontraron equipos.</p>
+    </div>
+  )}
+</Layout>

@@ -1,0 +1,22 @@
+{
+  "name": "nova-esports",
+  "build": {
+    "command": "npm run build",
+    "outputDirectory": "dist",
+    "publicDirectory": "public"
+  },
+  "deployment": {
+    "main": "./dist/_worker.js",
+    "mode": "advanced",
+    "customDomain": "novaesports.uk",
+    "buildOutputDirectory": "dist",
+    "assets": {
+      "upload": true,
+      "pathPrefix": "_astro"
+    }
+  },
+  "env": {
+    "RIOT_API_KEY": "RGAPI-74c20396-7600-4374-b1dd-10a2f8485116",
+    "D1_DATABASE": "lol_teams_db"
+  }
+}

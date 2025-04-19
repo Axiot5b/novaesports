@@ -1,0 +1,42 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PlayerCard from '../../components/players/PlayerCard.astro';
+import { getTeamById, getPlayersByTeamId } from '../../lib/db';
+import type { Team, Player } from '../../types';
+
+const { id } = Astro.params;
+const team: Team | null = await getTeamById(id!);
+const players: Player[] = team ? await getPlayersByTeamId(team.id) : [];
+
+if (!team) {
+  return new Response('Equipo no encontrado', { status: 404 });
+}
+---
+
+<Layout title={`${team.name} - LoL Teams Manager`}>
+  <div class="mb-8">
+    <h1 class="text-4xl font-bold mb-2">{team.name}</h1>
+    <div class="flex gap-4 text-gray-400">
+      <p>Win Rate: <span class="text-green-400">{team.winRate}%</span></p>
+      <p>Partidas Totales: <span class="text-blue-400">{team.totalGames}</span></p>
+    </div>
+  </div>
+
+  <div class="mb-8">
+    <h2 class="text-2xl font-bold mb-4">Últimas Partidas</h2>
+    <div class="bg-gray-800 rounded-lg p-4 inline-block">
+      <span class="text-green-400 font-bold">{team.recentMatches.wins}W</span>
+      {' - '}
+      <span class="text-red-400 font-bold">{team.recentMatches.losses}L</span>
+    </div>
+  </div>
+
+  <div>
+    <h2 class="text-2xl font-bold mb-6">Jugadores</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {players.map((player) => (
+        <PlayerCard player={player} />
+      ))}
+    </div>
+  </div>
+</Layout>

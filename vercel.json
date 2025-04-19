@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": { "zeroConfig": true }
+    }
+  ],
+  "env": {
+    "RIOT_API_KEY": "@riot_api_key",
+    "POSTGRES_URL": "@postgres_url",
+    "DATABASE_URL": "@postgres_url"
+  },
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install"
+}

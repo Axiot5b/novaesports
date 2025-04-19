@@ -1,0 +1,29 @@
+{
+  "name": "nova-esports",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "pages:dev": "wrangler pages dev ./dist --live-reload",
+    "pages:deploy": "npm run build && wrangler pages deploy ./dist",
+    "db:migrate": "wrangler d1 execute lol_teams_db --file=./src/lib/migrations/0000_initial.sql",
+    "db:seed": "wrangler d1 execute lol_teams_db --file=./src/lib/seed.sql",
+    "deploy": "node deploy.js",
+    "deploy:seed": "node deploy.js --seed"
+  },
+  "dependencies": {
+    "@astrojs/cloudflare": "^12.5.0",
+    "@astrojs/tailwind": "^6.0.2",
+    "@cloudflare/d1": "^1.4.1",
+    "astro": "^5.7.3",
+    "axios": "^1.8.4",
+    "tailwindcss": "^3.4.17"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250418.0",
+    "wrangler": "^4.12.0"
+  }
+}

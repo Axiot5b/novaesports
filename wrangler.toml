@@ -1,0 +1,25 @@
+name = "nova-esports"
+main = "dist/_worker.js"
+compatibility_date = "2024-04-19"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lol_teams_db"
+database_id = "f0c6cda1-883d-4bca-9e20-3f4571e77c36"
+migrations_dir = "src/lib/migrations"
+
+[site]
+bucket = "./dist"
+
+[build]
+command = "npm run build"
+watch_dir = "src"
+
+[pages]
+build_output_directory = "dist"
+include = ["/*"]
+exclude = []
+
+[env.production]
+d1_databases = [{ binding = "DB", database_name = "lol_teams_db", database_id = "f0c6cda1-883d-4bca-9e20-3f4571e77c36" }]

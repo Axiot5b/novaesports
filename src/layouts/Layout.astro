@@ -1,0 +1,38 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+  </head>
+  <body class="min-h-screen bg-gray-900 text-white">
+    <header class="bg-gray-800 py-4">
+      <nav class="container mx-auto px-4">
+        <ul class="flex space-x-6">
+          <li><a href="/" class="hover:text-blue-400">Inicio</a></li>
+          <li><a href="/teams" class="hover:text-blue-400">Equipos</a></li>
+          <li><a href="/players" class="hover:text-blue-400">Jugadores</a></li>
+          <li><a href="/stats" class="hover:text-blue-400">Estadísticas</a></li>
+        </ul>
+      </nav>
+    </header>
+    <main class="container mx-auto px-4 py-8">
+      <slot />
+    </main>
+    <footer class="bg-gray-800 py-4 mt-auto">
+      <div class="container mx-auto px-4 text-center">
+        <p>&copy; 2024 LoL Teams Manager</p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,73 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getTeams, getPlayersByTeamId } from '../lib/db';
+
+// Obtener los equipos y sus jugadores
+const teams = await getTeams();
+
+// Obtener estadísticas globales
+const allPlayers = await Promise.all(
+  teams.map(team => getPlayersByTeamId(team.id))
+).then(players => players.flat());
+
+const totalMatches = allPlayers.reduce((sum, player) => sum + player.games_played, 0);
+const globalWinRate = allPlayers.length > 0
+  ? Math.round(allPlayers.reduce((sum, player) => sum + player.win_rate, 0) / allPlayers.length)
+  : 0;
+const totalPlayers = allPlayers.length;
+---
+
+<Layout title="LoL Teams Manager - Inicio">
+  <div class="text-center mb-12">
+    <h1 class="text-4xl font-bold mb-4">Nova Esports</h1>
+    <p class="text-xl text-gray-400">Gestión de equipos competitivos de League of Legends</p>
+  </div>
+
+  <div class="grid md:grid-cols-3 gap-8">
+    {teams.map(team => (
+      <div class="bg-gray-800 rounded-lg p-6">
+        <h2 class="text-2xl font-bold mb-4">{team.name}</h2>
+        <div class="space-y-4">
+          <p class="text-gray-400">
+            Jugadores activos: <span class="text-blue-400">{
+              allPlayers.filter(p => p.team === team.id).length
+            }</span>
+          </p>
+          <p class="text-gray-400">
+            Winrate: <span class="text-green-400">{Math.round(team.winRate)}%</span>
+          </p>
+          <p class="text-gray-400">
+            Últimas partidas: 
+            <span class="text-green-400">{team.recentMatches.wins}W</span>
+            {' - '}
+            <span class="text-red-400">{team.recentMatches.losses}L</span>
+          </p>
+          <a 
+            href={`/teams/${team.id}`} 
+            class="inline-block bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md transition-colors"
+          >
+            Ver detalles
+          </a>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <div class="mt-12">
+    <h2 class="text-2xl font-bold mb-6">Estadísticas Generales</h2>
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="bg-gray-800 rounded-lg p-6 text-center">
+        <h3 class="text-xl mb-2">Total de Partidas</h3>
+        <p class="text-3xl font-bold text-blue-400">{totalMatches}</p>
+      </div>
+      <div class="bg-gray-800 rounded-lg p-6 text-center">
+        <h3 class="text-xl mb-2">Winrate Global</h3>
+        <p class="text-3xl font-bold text-green-400">{globalWinRate}%</p>
+      </div>
+      <div class="bg-gray-800 rounded-lg p-6 text-center">
+        <h3 class="text-xl mb-2">Jugadores Totales</h3>
+        <p class="text-3xl font-bold text-purple-400">{totalPlayers}</p>
+      </div>
+    </div>
+  </div>
+</Layout>

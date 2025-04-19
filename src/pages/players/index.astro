@@ -1,0 +1,64 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PlayerCard from '../../components/players/PlayerCard.astro';
+import { getTeams, getPlayersByTeamId } from '../../lib/db';
+
+const teams = await getTeams();
+const allPlayers = await Promise.all(
+  teams.map(team => getPlayersByTeamId(team.id))
+).then(players => players.flat());
+
+let message = '';
+if (Astro.request.method === 'POST') {
+  try {
+    const response = await fetch(`${Astro.url.origin}/api/update-players`, {
+      method: 'POST'
+    });
+    if (response.ok) {
+      message = '✅ Jugadores actualizados correctamente';
+    } else {
+      const error = await response.json();
+      message = `❌ Error: ${error.message}`;
+    }
+  } catch (error: any) {
+    message = `❌ Error: ${error.message}`;
+  }
+}
+---
+
+<Layout title="Jugadores - LoL Teams Manager">
+  <div class="mb-8 flex justify-between items-center">
+    <div>
+      <h1 class="text-4xl font-bold mb-2">Jugadores</h1>
+      <p class="text-gray-400">Gestión de jugadores de todos los equipos</p>
+    </div>
+    <div class="flex gap-4">
+      <a
+        href="/players/new"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Agregar Jugador
+      </a>
+      <form method="POST">
+        <button
+          type="submit"
+          class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Actualizar Estadísticas
+        </button>
+      </form>
+    </div>
+  </div>
+
+  {message && (
+    <div class={`p-4 rounded-lg mb-6 ${message.startsWith('✅') ? 'bg-green-500' : 'bg-red-500'}`}>
+      {message}
+    </div>
+  )}
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {allPlayers.map(player => (
+      <PlayerCard player={player} />
+    ))}
+  </div>
+</Layout>

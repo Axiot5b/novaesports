@@ -1,0 +1,115 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import StatsChart from '../../components/stats/StatsChart.astro';
+import { getTeams, getPlayersByTeamId } from '../../lib/db';
+import type { Team, Player } from '../../types';
+
+// Obtener todos los jugadores de todos los equipos
+const teams = await getTeams();
+const allPlayers = await Promise.all(
+  teams.map(team => getPlayersByTeamId(team.id))
+).then(players => players.flat());
+
+// Calcular estadísticas por rol
+const roleStats = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT'].map(role => {
+  const playersInRole = allPlayers.filter(p => p.role === role);
+  // Si no hay jugadores en este rol, el winrate es 0
+  if (playersInRole.length === 0) return {
+    label: role,
+    value: 0,
+    color: getRoleColor(role)
+  };
+
+  // Calcular el winrate promedio sumando todos los winrates y dividiendo por el número de jugadores
+  const avgWinRate = playersInRole.reduce((acc, p) => acc + p.win_rate, 0) / playersInRole.length;
+
+  return {
+    label: `${role} (${playersInRole.length})`,
+    value: Math.round(avgWinRate * 10) / 10,
+    color: getRoleColor(role)
+  };
+});
+
+// Función auxiliar para obtener el color del rol
+function getRoleColor(role: string) {
+  return {
+    TOP: '#ff4444',
+    JUNGLE: '#44ff44',
+    MID: '#4444ff',
+    ADC: '#ffff44',
+    SUPPORT: '#ff44ff'
+  }[role] || '#ffffff';
+}
+
+// Calcular horas promedio por equipo y resto de estadísticas
+const teamHoursStats = teams.map(team => ({
+  label: team.name,
+  value: Math.round(allPlayers
+    .filter(p => p.team === team.id)
+    .reduce((acc, p) => acc + p.hours_per_week, 0) / 5),
+  color: '#4488ff'
+}));
+
+const teamWinrateStats = teams.map(team => ({
+  label: team.name,
+  value: team.winRate,
+  color: '#44ff88'
+}));
+
+// Calcular estadísticas globales
+const totalPlayers = allPlayers.length;
+const globalWinRate = totalPlayers > 0 
+  ? Math.round(allPlayers.reduce((acc, p) => acc + p.win_rate, 0) / totalPlayers)
+  : 0;
+const totalHoursPerWeek = allPlayers.reduce((acc, p) => acc + p.hours_per_week, 0);
+const totalGamesPlayed = allPlayers.reduce((acc, p) => acc + p.games_played, 0);
+---
+
+<Layout title="Estadísticas - LoL Teams Manager">
+  <div class="mb-8">
+    <h1 class="text-4xl font-bold mb-4">Estadísticas Generales</h1>
+    <p class="text-gray-400">Análisis de rendimiento de equipos y jugadores</p>
+  </div>
+
+  <div class="grid md:grid-cols-2 gap-8">
+    <StatsChart
+      title="Winrate Promedio por Rol"
+      data={roleStats}
+    />
+    
+    <StatsChart
+      title="Horas Semanales por Equipo"
+      data={teamHoursStats}
+    />
+
+    <StatsChart
+      title="Winrate por Equipo"
+      data={teamWinrateStats}
+    />
+  </div>
+
+  <div class="mt-12">
+    <h2 class="text-2xl font-bold mb-6">Resumen General</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="bg-gray-800 p-6 rounded-lg text-center">
+        <p class="text-gray-400 mb-2">Total Jugadores</p>
+        <p class="text-3xl font-bold text-blue-400">{totalPlayers}</p>
+      </div>
+      
+      <div class="bg-gray-800 p-6 rounded-lg text-center">
+        <p class="text-gray-400 mb-2">Promedio Winrate Global</p>
+        <p class="text-3xl font-bold text-green-400">{globalWinRate}%</p>
+      </div>
+      
+      <div class="bg-gray-800 p-6 rounded-lg text-center">
+        <p class="text-gray-400 mb-2">Horas Totales/Semana</p>
+        <p class="text-3xl font-bold text-purple-400">{totalHoursPerWeek}h</p>
+      </div>
+      
+      <div class="bg-gray-800 p-6 rounded-lg text-center">
+        <p class="text-gray-400 mb-2">Total Partidas</p>
+        <p class="text-3xl font-bold text-yellow-400">{totalGamesPlayed}</p>
+      </div>
+    </div>
+  </div>
+</Layout>

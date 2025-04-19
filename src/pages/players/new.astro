@@ -1,0 +1,162 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getTeams } from '../../lib/db';
+import { getSummonerByRiotId, getPlayerRank } from '../../lib/riotApi';
+
+const teams = await getTeams();
+let error = '';
+let success = false;
+
+// Manejar el envío del formulario
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const gameName = formData.get('gameName') as string;
+    const tagLine = formData.get('tagLine') as string;
+    const role = formData.get('role') as string;
+    const teamId = formData.get('team') as string;
+
+    if (!gameName || !tagLine) {
+      error = 'El nombre y tag son requeridos';
+    } else {
+      // Verificar que el invocador existe y obtener su PUUID
+      const summonerData = await getSummonerByRiotId(gameName, tagLine);
+
+      if (summonerData) {
+        // Obtener estadísticas de rango usando el PUUID
+        const rankData = await getPlayerRank(summonerData.puuid);
+
+        // Crear el jugador con sus estadísticas iniciales
+        await env.DB.prepare(`
+          INSERT INTO players (
+            id,
+            summoner_name,
+            role,
+            team,
+            rank,
+            win_rate,
+            games_played,
+            hours_per_week,
+            hours_per_month,
+            champion_pool,
+            puuid
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          crypto.randomUUID(),
+          `${gameName}#${tagLine}`,
+          role,
+          teamId,
+          `${rankData.tier} ${rankData.rank}`.trim(),
+          rankData.winRate,
+          rankData.wins + rankData.losses,
+          0, // hours_per_week inicialmente en 0
+          0, // hours_per_month inicialmente en 0
+          '[]', // champion_pool inicialmente vacío
+          summonerData.puuid
+        ).run();
+
+        return Astro.redirect('/teams/' + teamId);
+      } else {
+        error = 'No se encontró el invocador. Verifica el nombre y tag.';
+      }
+    }
+  } catch (error: any) {
+    console.error('Error al crear jugador:', error);
+    error = `Error: ${error.message || 'Hubo un problema al buscar el jugador'}`;
+  }
+}
+---
+
+<Layout title="Agregar Jugador - LoL Teams Manager">
+  <div class="max-w-2xl mx-auto">
+    <h1 class="text-4xl font-bold mb-8">Agregar Nuevo Jugador</h1>
+
+    {error && (
+      <div class="bg-red-500 text-white p-4 rounded-lg mb-6">
+        {error}
+      </div>
+    )}
+
+    <form method="POST" class="space-y-6 bg-gray-800 p-6 rounded-lg">
+      <div class="grid grid-cols-3 gap-4">
+        <div class="col-span-2">
+          <label for="gameName" class="block text-sm font-medium text-gray-400 mb-2">
+            Nombre de Invocador
+          </label>
+          <input
+            type="text"
+            id="gameName"
+            name="gameName"
+            required
+            placeholder="Ej: NovaPlayer"
+            class="w-full p-2 bg-gray-700 rounded border border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label for="tagLine" class="block text-sm font-medium text-gray-400 mb-2">
+            Tag
+          </label>
+          <input
+            type="text"
+            id="tagLine"
+            name="tagLine"
+            required
+            placeholder="LAS"
+            class="w-full p-2 bg-gray-700 rounded border border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label for="role" class="block text-sm font-medium text-gray-400 mb-2">
+          Rol
+        </label>
+        <select
+          id="role"
+          name="role"
+          required
+          class="w-full p-2 bg-gray-700 rounded border border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="">Selecciona un rol</option>
+          <option value="TOP">TOP</option>
+          <option value="JUNGLE">JUNGLE</option>
+          <option value="MID">MID</option>
+          <option value="ADC">ADC</option>
+          <option value="SUPPORT">SUPPORT</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="team" class="block text-sm font-medium text-gray-400 mb-2">
+          Equipo
+        </label>
+        <select
+          id="team"
+          name="team"
+          required
+          class="w-full p-2 bg-gray-700 rounded border border-gray-600 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="">Selecciona un equipo</option>
+          {teams.map(team => (
+            <option value={team.id}>{team.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div class="flex gap-4">
+        <button
+          type="submit"
+          class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+        >
+          Agregar Jugador
+        </button>
+        <a
+          href="/teams"
+          class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-center"
+        >
+          Cancelar
+        </a>
+      </div>
+    </form>
+  </div>
+</Layout>

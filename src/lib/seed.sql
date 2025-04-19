@@ -1,0 +1,2 @@
+-- Archivo seed.sql limpio, ya no necesitamos los equipos de ejemplo
+-- Los equipos reales están en 0001_teams_update.sql
